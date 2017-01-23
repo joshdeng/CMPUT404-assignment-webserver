@@ -1,6 +1,5 @@
 #  coding: utf-8 
 import SocketServer
-
 # Copyright 2013 Abram Hindle, Eddie Antonio Santos
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,11 +26,45 @@ import SocketServer
 # try: curl -v -X GET http://127.0.0.1:8080/
 
 
+from os import curdir
+
 class MyWebServer(SocketServer.BaseRequestHandler):
-    
     def handle(self):
         self.data = self.request.recv(1024).strip()
         print ("Got a request of: %s\n" % self.data)
+        requestArray = self.data.split()
+        
+        if(requestArray[0]=="GET"):
+            try:
+                if(requestArray[1] == "/"):
+                    resultFile = open(curdir + "/www/index.html", "r").read()
+                    mimeType = "text/html" 
+                elif(requestArray[1].endswith("/")):
+                    resultFile = open(curdir + "/www" + requestArray[1] + "index.html", "r").read()
+                    mimeType = "text/html"
+                elif(requestArray[1].endswith(".css")):
+                    resultFile = open(curdir + "/www" + requestArray[1], "r").read()
+                    mimeType = "text/css"
+                
+                elif(requestArray[1].endswith(".html")):
+                    resultFile = open(curdir + "/www" + requestArray[1], "r").read()
+                    mimeType = "text/html"
+                else:
+                    self.request.sendall("HTTP/1.1 404 Path Not Found \r\n")
+                    return
+
+                fileLength = len(resultFile)
+                self.request.sendall("HTTP/1.1 200 OK \r\n" 
+                    + "Content-Length: " + str(fileLength) + "\r\n" 
+                    + "Content-Type: " + mimeType + "\r\n" 
+                    + "Connection: close \r\n" + "\r\n" + resultFile)
+            except IOError:
+                self.request.sendall("HTTP/1.1 404 File Not Found \r\n");
+
+        else:
+            self.request.sendall("HTTP/1.1 405 Method Not Allowed \r\n")
+
+
         self.request.sendall("OK")
 
 if __name__ == "__main__":
