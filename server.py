@@ -30,22 +30,27 @@ from os import curdir
 
 class MyWebServer(SocketServer.BaseRequestHandler):
     def handle(self):
+        # parseing value
         self.data = self.request.recv(1024).strip()
         print ("Got a request of: %s\n" % self.data)
         requestArray = self.data.split()
         
+        # check if its a get request
         if(requestArray[0]=="GET"):
             try:
+                # return index if the path is empty
                 if(requestArray[1] == "/"):
                     resultFile = open(curdir + "/www/index.html", "r").read()
                     mimeType = "text/html" 
+                # return the page under www filder
                 elif(requestArray[1].endswith("/")):
                     resultFile = open(curdir + "/www" + requestArray[1] + "index.html", "r").read()
                     mimeType = "text/html"
+                # return css file
                 elif(requestArray[1].endswith(".css")):
                     resultFile = open(curdir + "/www" + requestArray[1], "r").read()
                     mimeType = "text/css"
-                
+                # return html file
                 elif(requestArray[1].endswith(".html")):
                     resultFile = open(curdir + "/www" + requestArray[1], "r").read()
                     mimeType = "text/html"
@@ -53,18 +58,21 @@ class MyWebServer(SocketServer.BaseRequestHandler):
                     self.request.sendall("HTTP/1.1 404 Path Not Found \r\n")
                     return
 
+                # show the request result information
                 fileLength = len(resultFile)
                 self.request.sendall("HTTP/1.1 200 OK \r\n" 
                     + "Content-Length: " + str(fileLength) + "\r\n" 
                     + "Content-Type: " + mimeType + "\r\n" 
                     + "Connection: close \r\n" + "\r\n" + resultFile)
             except IOError:
+                # handle errorr 404
                 self.request.sendall("HTTP/1.1 404 File Not Found \r\n");
 
         else:
+            # handle error 405
             self.request.sendall("HTTP/1.1 405 Method Not Allowed \r\n")
 
-
+            
         self.request.sendall("OK")
 
 if __name__ == "__main__":
